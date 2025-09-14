@@ -17,15 +17,5 @@ A API é construída em Python usando o framework FastAPI e se conecta a um banc
 
 ---
 
-## Guia de Construção e Configuração do Ambiente
 
-Esta seção detalha o passo a passo da construção da base do projeto, servindo como um guia de instalação e um registro do desenvolvimento inicial.
 
-### **Passo 0: Configuração Inicial do Ambiente**
-
-* **Objetivo:** Preparar o ambiente de desenvolvimento local.
-* **Ferramentas:** Terminal (Git Bash), Python.
-* **Ações:**
-    1.  Criação da pasta do projeto (`gestao_itens`).
-    2.  Criação de um ambiente virtual com o comando `python -m venv venv` para isolar as dependências do projeto.
-    3.  Ativação do ambiente virtual com `source venv/Scripts/activate`.
