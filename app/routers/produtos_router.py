@@ -38,3 +38,54 @@ def create_produto(produto: produto_schema.ProdutoCreate, db: Session = Depends(
 def read_produtos(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     produtos = db.query(produto_model.Produto).offset(skip).limit(limit).all()
     return produtos
+
+
+# Adicionar ao final de app/routers/produtos_router.py
+@router.get("/{produto_id}", response_model=produto_schema.Produto)
+def read_produto_by_id(produto_id: int, db: Session = Depends(get_db)):
+    # Busca o produto no banco de dados pelo ID fornecido
+    db_produto = db.query(produto_model.Produto).filter(produto_model.Produto.id == produto_id).first()
+    
+    # Se o produto não for encontrado, retorna um erro 404
+    if db_produto is None:
+        raise HTTPException(status_code=404, detail="Produto não encontrado")
+        
+    return db_produto
+
+# Adicionar ao final de app/routers/produtos_router.py
+
+@router.put("/{produto_id}", response_model=produto_schema.Produto)
+def update_produto(produto_id: int, produto_update: produto_schema.ProdutoUpdate, db: Session = Depends(get_db)):
+    # Primeiro, busca o produto que queremos atualizar
+    db_produto = db.query(produto_model.Produto).filter(produto_model.Produto.id == produto_id).first()
+
+    # Se não existir, retorna erro 404
+    if db_produto is None:
+        raise HTTPException(status_code=404, detail="Produto não encontrado")
+
+    # Pega os dados enviados para atualização
+    update_data = produto_update.model_dump(exclude_unset=True)
+
+    # Atualiza os campos do objeto do banco com os dados recebidos
+    for key, value in update_data.items():
+        setattr(db_produto, key, value)
+
+    db.add(db_produto)
+    db.commit()
+    db.refresh(db_produto)
+    return db_produto
+
+# Adicionar ao final de app/routers/produtos_router.py
+
+@router.delete("/{produto_id}", response_model=dict)
+def delete_produto(produto_id: int, db: Session = Depends(get_db)):
+    # Busca o produto que queremos deletar
+    db_produto = db.query(produto_model.Produto).filter(produto_model.Produto.id == produto_id).first()
+
+    # Se não existir, retorna erro 404
+    if db_produto is None:
+        raise HTTPException(status_code=404, detail="Produto não encontrado")
+
+    db.delete(db_produto)
+    db.commit()
+    return {"message": "Produto deletado com sucesso"}

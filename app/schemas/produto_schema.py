@@ -21,3 +21,10 @@ class Produto(ProdutoBase):
 
     class Config:
         from_attributes = True # Permite que o Pydantic leia dados de um modelo ORM
+
+
+# Esquema para a atualização de um produto (campos opcionais)
+class ProdutoUpdate(BaseModel):
+    sku: Optional[str] = None
+    nome: Optional[str] = None
+    descricao: Optional[str] = None
