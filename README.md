@@ -15,6 +15,19 @@ A API é construída em Python usando o framework FastAPI e se conecta a um banc
 * **Editor de Código:** Visual Studio Code
 * **Controle de Versão:** Git & GitHub
 
+## Funcionalidades da API
+
+A API atualmente suporta as seguintes funcionalidades:
+
+* **Autenticação:** Sistema de login completo com tokens JWT.
+* **Autorização:** Rotas protegidas e diferenciação de permissões entre usuários `administrador` e `usuario`.
+* **Gerenciamento de Produtos:** CRUD completo para o catálogo de produtos (apenas admin).
+* **Gerenciamento de Locais:** CRUD completo para os locais de estoque (apenas admin).
+* **Gerenciamento de Itens:** CRUD para os itens do inventário, com permissões específicas por papel.
+* **Lógica de Negócio:** Endpoint para transferência de itens entre locais com registro de histórico.
+* **Dashboard:** Endpoint de agregação de dados para a visão do administrador.
+* **Busca:** Filtragem de itens por local, status e número de série.
+
 ---
 
 
