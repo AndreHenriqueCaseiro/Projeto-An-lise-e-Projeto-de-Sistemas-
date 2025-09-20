@@ -2,7 +2,7 @@
 
 from fastapi import FastAPI
 # Esta linha importa a variável 'produtos_router' do arquivo produtos_router.py
-from .routers import produtos_router 
+from .routers import produtos_router, locais_router, auth_router 
 
 from fastapi import FastAPI
 from .routers import produtos_router, locais_router 
@@ -17,6 +17,7 @@ app = FastAPI(
 # tenha um objeto chamado 'router' dentro dele.
 app.include_router(produtos_router.router)
 app.include_router(locais_router.router)
+app.include_router(auth_router.router)
 
 @app.get("/", tags=["Root"])
 def read_root():
