@@ -5,13 +5,12 @@ from sqlalchemy.orm import Session
 from typing import List
 
 # Importando TODOS os componentes necessários no topo do arquivo
-from ..database import get_db, engine # <-- IMPORTAMOS O ENGINE AQUI
-from ..models import produto_model
+from ..database import get_db, engine
+from ..models import produto_model, usuario_model # Adicionamos o modelo de usuário
 from ..schemas import produto_schema
+from ..security import get_current_user # Importamos nossa dependência de segurança
 
 # A linha abaixo agora funciona, pois o 'engine' já foi importado.
-# Esta é uma forma simples de garantir que a tabela seja criada ao iniciar.
-# Lembre-se que em produção, o ideal é usar Migrations (Alembic).
 produto_model.Base.metadata.create_all(bind=engine)
 
 
@@ -20,14 +19,22 @@ router = APIRouter(
     tags=["Produtos"]
 )
 
+# --- Endpoints Protegidos ---
+
 @router.post("/", response_model=produto_schema.Produto)
-def create_produto(produto: produto_schema.ProdutoCreate, db: Session = Depends(get_db)):
-    # Verifica se o SKU já existe para evitar duplicatas
+def create_produto(
+    produto: produto_schema.ProdutoCreate, 
+    db: Session = Depends(get_db),
+    current_user: usuario_model.Usuario = Depends(get_current_user) # <- Dependência de autenticação
+):
+    # Verificação de permissão (role)
+    if current_user.role != "administrador":
+        raise HTTPException(status_code=403, detail="Acesso negado: apenas administradores podem criar produtos.")
+    
     db_produto = db.query(produto_model.Produto).filter(produto_model.Produto.sku == produto.sku).first()
     if db_produto:
         raise HTTPException(status_code=400, detail="SKU já cadastrado")
     
-    # Usamos .model_dump() que é o método mais moderno do Pydantic v2
     novo_produto = produto_model.Produto(**produto.model_dump())
     db.add(novo_produto)
     db.commit()
@@ -35,38 +42,42 @@ def create_produto(produto: produto_schema.ProdutoCreate, db: Session = Depends(
     return novo_produto
 
 @router.get("/", response_model=List[produto_schema.Produto])
-def read_produtos(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def read_produtos(
+    db: Session = Depends(get_db),
+    skip: int = 0,
+    limit: int = 100,
+    current_user: usuario_model.Usuario = Depends(get_current_user) # <- Apenas requer login
+):
     produtos = db.query(produto_model.Produto).offset(skip).limit(limit).all()
     return produtos
 
-
-# Adicionar ao final de app/routers/produtos_router.py
 @router.get("/{produto_id}", response_model=produto_schema.Produto)
-def read_produto_by_id(produto_id: int, db: Session = Depends(get_db)):
-    # Busca o produto no banco de dados pelo ID fornecido
+def read_produto_by_id(
+    produto_id: int, 
+    db: Session = Depends(get_db),
+    current_user: usuario_model.Usuario = Depends(get_current_user) # <- Apenas requer login
+):
     db_produto = db.query(produto_model.Produto).filter(produto_model.Produto.id == produto_id).first()
-    
-    # Se o produto não for encontrado, retorna um erro 404
     if db_produto is None:
         raise HTTPException(status_code=404, detail="Produto não encontrado")
-        
     return db_produto
 
-# Adicionar ao final de app/routers/produtos_router.py
-
 @router.put("/{produto_id}", response_model=produto_schema.Produto)
-def update_produto(produto_id: int, produto_update: produto_schema.ProdutoUpdate, db: Session = Depends(get_db)):
-    # Primeiro, busca o produto que queremos atualizar
-    db_produto = db.query(produto_model.Produto).filter(produto_model.Produto.id == produto_id).first()
+def update_produto(
+    produto_id: int, 
+    produto_update: produto_schema.ProdutoUpdate, 
+    db: Session = Depends(get_db),
+    current_user: usuario_model.Usuario = Depends(get_current_user) # <- Dependência de autenticação
+):
+    # Verificação de permissão (role)
+    if current_user.role != "administrador":
+        raise HTTPException(status_code=403, detail="Acesso negado: apenas administradores podem editar produtos.")
 
-    # Se não existir, retorna erro 404
+    db_produto = db.query(produto_model.Produto).filter(produto_model.Produto.id == produto_id).first()
     if db_produto is None:
         raise HTTPException(status_code=404, detail="Produto não encontrado")
 
-    # Pega os dados enviados para atualização
     update_data = produto_update.model_dump(exclude_unset=True)
-
-    # Atualiza os campos do objeto do banco com os dados recebidos
     for key, value in update_data.items():
         setattr(db_produto, key, value)
 
@@ -75,14 +86,17 @@ def update_produto(produto_id: int, produto_update: produto_schema.ProdutoUpdate
     db.refresh(db_produto)
     return db_produto
 
-# Adicionar ao final de app/routers/produtos_router.py
-
 @router.delete("/{produto_id}", response_model=dict)
-def delete_produto(produto_id: int, db: Session = Depends(get_db)):
-    # Busca o produto que queremos deletar
-    db_produto = db.query(produto_model.Produto).filter(produto_model.Produto.id == produto_id).first()
+def delete_produto(
+    produto_id: int, 
+    db: Session = Depends(get_db),
+    current_user: usuario_model.Usuario = Depends(get_current_user) # <- Dependência de autenticação
+):
+    # Verificação de permissão (role)
+    if current_user.role != "administrador":
+        raise HTTPException(status_code=403, detail="Acesso negado: apenas administradores podem deletar produtos.")
 
-    # Se não existir, retorna erro 404
+    db_produto = db.query(produto_model.Produto).filter(produto_model.Produto.id == produto_id).first()
     if db_produto is None:
         raise HTTPException(status_code=404, detail="Produto não encontrado")
 
