@@ -92,6 +92,16 @@ def update_item(
     db.refresh(db_item)
     return db_item
 
+@router.delete("/{item_id}", response_model=dict)
+def delete_item(item_id: int, db: Session = Depends(get_db)):
+    db_item = db.query(item_model.Item).filter(item_model.Item.id == item_id).first()
+    if db_item is None:
+        raise HTTPException(status_code=404, detail="Item não encontrado")
+
+    db.delete(db_item)
+    db.commit()
+    return {"message": "Item deletado com sucesso"}
+
 # ... (função transfer_item continua igual) ...
 @router.post("/{item_id}/transferir", response_model=dict)
 def transfer_item(
